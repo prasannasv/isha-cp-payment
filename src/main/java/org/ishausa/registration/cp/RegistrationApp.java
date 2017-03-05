@@ -1,6 +1,7 @@
 package org.ishausa.registration.cp;
 
 import com.sforce.soap.enterprise.EnterpriseConnection;
+import com.sforce.soap.enterprise.Error;
 import com.sforce.soap.enterprise.QueryResult;
 import com.sforce.soap.enterprise.SaveResult;
 import com.sforce.soap.enterprise.sobject.Child__c;
@@ -8,11 +9,9 @@ import com.sforce.soap.enterprise.sobject.Payment_Information__c;
 import com.sforce.soap.enterprise.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import org.ishausa.registration.cp.payment.PaymentProcessor;
+import org.ishausa.registration.cp.payment.TransactionStatus;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,10 +28,13 @@ public class RegistrationApp {
 
         queryParticipant(connection);
 
-        performTransaction(paymentProcessor);
+        transferAndLog(paymentProcessor, connection);
     }
 
-    private static void performTransaction(final PaymentProcessor processor) {
+    private static void transferAndLog(final PaymentProcessor processor, final EnterpriseConnection connection) {
+        createPaymentInfoChildrenProgram(connection, "a2s0G00000BNS3N",
+                //todo: get this from payment processor
+                TransactionStatus.fromResponse(""));
     }
 
     private static void queryParticipant(final EnterpriseConnection connection) {
@@ -61,22 +63,15 @@ public class RegistrationApp {
         }
     }
 
-    private boolean createPaymentInfoChildrenProgram(final EnterpriseConnection connection,
-                                                     final String childContactId) {
+    private static boolean createPaymentInfoChildrenProgram(final EnterpriseConnection connection,
+                                                            final String childContactId,
+                                                            final TransactionStatus status) {
         try {
             final Payment_Information__c pI = new Payment_Information__c();
             final Calendar sCal = Calendar.getInstance();
-            final Date trans_date = new Date();
-            if (trans_date != null) {
-                sCal.setTime(trans_date);
-                pI.setDate_of_Deposit_or_Date_CC_was_Charged__c(sCal);
-            } else {
-                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                Calendar cal11 = Calendar.getInstance();
-                pI.setDate_of_Deposit_or_Date_CC_was_Charged__c(cal11);
-            }
-            pI.setPayment_Amount__c(1000.00);
-            pI.setVendor_Confirmation_Number__c("PAYPALXXXXX1");
+            pI.setDate_of_Deposit_or_Date_CC_was_Charged__c(sCal);
+            pI.setPayment_Amount__c(925.00);
+            pI.setVendor_Confirmation_Number__c(status.getTransactionId());
             pI.setChildrens_Program_Payment__c(childContactId);
 
             //not mandatory
@@ -86,23 +81,23 @@ public class RegistrationApp {
 
             //set the payment type
             pI.setMode_of_Payment__c("Paypal");
-            pI.setVolunteer_handled_the_payment__c("Event Espresso");
+            pI.setVolunteer_handled_the_payment__c("isha-cp-reg heroku");
 
             //Now we can create the payment object
             Payment_Information__c[] payments = new Payment_Information__c[1];
             payments[0] = pI;
 
-            SaveResult createResult = connection.create(payments)[0];
+            final SaveResult createResult = connection.create(payments)[0];
 
             if (createResult.isSuccess()) {
-                System.out.println("Successfully created the Payment for Visitor Info record - Id: " + createResult.getId());
+                log.info("Successfully created the Payment Info record - Id: " + createResult.getId());
             } else {
-                com.sforce.soap.enterprise.Error[] errors = createResult.getErrors();
-                for (int j = 0; j < errors.length; j++) {
-                    System.out.println("ERROR updating record: " + errors[j].getMessage());
+                for (final Error error : createResult.getErrors()) {
+                    log.severe("ERROR updating record: " + error.getMessage());
                 }
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
+            log.log(Level.SEVERE, "Unknown failure updating payment info", e);
             return false;
         }
         return true;

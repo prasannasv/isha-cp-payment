@@ -74,7 +74,9 @@ public class TransactionStatus {
         }
     }
 
-    // Sample response: TIMESTAMP=2017%2d03%2d05T06%3a45%3a08Z&CORRELATIONID=b12b62b259bae&ACK=Success&VERSION=56%2e0&BUILD=25237094&AMT=1%2e00&CURRENCYCODE=USD&AVSCODE=Y&CVV2MATCH=X&TRANSACTIONID=51E24574PJ126625Y
+    // Sample response:
+    // TIMESTAMP=2017%2d03%2d05T06%3a45%3a08Z&CORRELATIONID=b12b62b259bae&ACK=Success&VERSION=56%2e0&BUILD=25237094&AMT=1%2e00&CURRENCYCODE=USD&AVSCODE=Y&CVV2MATCH=X&TRANSACTIONID=51E24574PJ126625Y
+    // TIMESTAMP=2017%2d03%2d05T07%3a31%3a49Z&CORRELATIONID=9dcd8f9ccc014&ACK=Failure&VERSION=56%2e0&BUILD=25237094&L_ERRORCODE0=10527&L_SHORTMESSAGE0=Invalid%20Data&L_LONGMESSAGE0=This%20transaction%20cannot%20be%20processed%2e%20Please%20enter%20a%20valid%20credit%20card%20number%20and%20type%2e&L_SEVERITYCODE0=Error&AMT=1%2e00&CURRENCYCODE=USD
     public static TransactionStatus fromResponse(final String response) {
         final Map<String, List<String>> responseParams = NameValuePairs.splitParams(response);
         final String acknowledgement = nullSafeGetFirst(responseParams, FIELD_ACK);
