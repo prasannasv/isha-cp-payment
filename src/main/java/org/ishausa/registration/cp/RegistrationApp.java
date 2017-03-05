@@ -14,6 +14,7 @@ import com.sforce.ws.ConnectionException;
 import org.ishausa.registration.cp.payment.PaymentProcessor;
 import org.ishausa.registration.cp.payment.TransactionStatus;
 import org.ishausa.registration.cp.renderer.SoyRenderer;
+import org.ishausa.registration.cp.security.HttpsEnforcer;
 import spark.Request;
 import spark.Response;
 
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
 import static spark.Spark.port;
@@ -61,6 +63,12 @@ public class RegistrationApp {
             response.status(500);
             response.body("Exception: " + exception + " stack: " + Throwables.getStackTraceAsString(exception));
         }));
+
+        app.initFilters();
+    }
+
+    private void initFilters() {
+        before(new HttpsEnforcer());
     }
 
     private String handleGet(final Request request, final Response response) {
