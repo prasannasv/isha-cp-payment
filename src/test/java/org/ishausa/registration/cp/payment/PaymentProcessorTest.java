@@ -20,15 +20,15 @@ public class PaymentProcessorTest {
     @Ignore
     public void validCard() {
         final PaymentInfo amount = new PaymentInfo(1, "Children's Program Jul 2017", "Children's Program Jul 2017");
-        final CreditCard card = new CreditCard("4147099565229612", "Visa", 8, 2020);
+        final CreditCard card = new CreditCard("4147008081913313", "Visa", 1, 2040);
         final CardOwnerInfo ownerInfo = new CardOwnerInfo.Builder()
                 .withFirstName("Prasanna")
                 .withLastName("Venkat")
-                .withAddressLine1("208 Orcas PL SE")
-                .withCity("Renton")
-                .withState("WA")
-                .withZip("98059")
-                .withEmail("to.srini@gmail.com").build();
+                .withAddressLine1("123 2nd Ave N")
+                .withCity("Atlanta")
+                .withState("GA")
+                .withZip("30301")
+                .withEmail("random@gmail.com").build();
 
         paymentProcessor.chargeCreditCard(amount, card, ownerInfo);
     }
@@ -36,15 +36,15 @@ public class PaymentProcessorTest {
     @Test
     public void invalidCard() {
         final PaymentInfo amount = new PaymentInfo(1, "Children's Program Jul 2017", "Children's Program Jul 2017");
-        final CreditCard card = new CreditCard("4147099565223112", "Visa", 1, 2010);
+        final CreditCard card = new CreditCard("4147008081913313", "Visa", 1, 2010);
         final CardOwnerInfo ownerInfo = new CardOwnerInfo.Builder()
                 .withFirstName("Prasanna")
                 .withLastName("Venkat")
-                .withAddressLine1("208 Orcas PL SE")
-                .withCity("Renton")
-                .withState("WA")
-                .withZip("98059")
-                .withEmail("to.srini@gmail.com").build();
+                .withAddressLine1("123 2nd Ave N")
+                .withCity("Atlanta")
+                .withState("GA")
+                .withZip("30301")
+                .withEmail("random@gmail.com").build();
 
         paymentProcessor.chargeCreditCard(amount, card, ownerInfo);
     }
