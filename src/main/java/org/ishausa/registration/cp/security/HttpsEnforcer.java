@@ -24,7 +24,7 @@ public class HttpsEnforcer implements Filter {
 
             if ("http".equals(forwardedProto)) {
                 log.info("Redirecting to a secure scheme on a non-secure request");
-                response.redirect(request.url().replace("http://", "https://"));
+                response.redirect(request.uri().replace("http://", "https://"));
                 halt();
             }
         }
