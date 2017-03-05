@@ -19,12 +19,18 @@ public class HttpsEnforcer implements Filter {
     @Override
     public void handle(final Request request, final Response response) throws Exception {
 
-        if (!request.url().startsWith("http://localhost:")) {
+        log.info("url: " + request.url() + ", queryString: " + request.queryString());
+        final String url = request.url();
+        final String queryString = request.queryString();
+        final String fullUrl = (queryString != null) ? url + '?' + queryString : url;
+
+        if (!fullUrl.startsWith("http://localhost:")) {
             final String forwardedProto = request.headers(X_FORWARDED_PROTO);
 
             if ("http".equals(forwardedProto)) {
-                log.info("Redirecting to a secure scheme on a non-secure request");
-                response.redirect(request.uri().replace("http://", "https://"));
+                final String redirectUrl = fullUrl.replace("http://", "https://");
+                log.info("Redirecting to a secure scheme on a non-secure request. Redirect to: " + redirectUrl);
+                response.redirect(redirectUrl);
                 halt();
             }
         }
