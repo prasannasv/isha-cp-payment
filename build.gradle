@@ -23,12 +23,16 @@ dependencies {
     // The production code uses the SLF4J logging API at compile time
     compile 'org.slf4j:slf4j-api:1.7.21'
 
-    compile group: 'com.force.api', name: 'force-wsc', version: '39.0.0'
+    compile group: 'com.google.guava', name: 'guava', version: '21.0'
 
+    // Salesforce Dependencies
+    compile group: 'com.force.api', name: 'force-wsc', version: '39.0.0'
     // Isha's Enterprise jar that contains definitions for our custom objects
     compile fileTree(dir: 'lib')
 
+    // Payment Dependencies
     compile 'com.paypal.sdk:rest-api-sdk:+'
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.3'
 
     // Declare the dependency for your favourite test framework you want to use in your tests.
     // TestNG is also supported by the Gradle Test task. Just change the
