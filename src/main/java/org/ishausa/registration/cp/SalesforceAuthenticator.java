@@ -1,5 +1,6 @@
 package org.ishausa.registration.cp;
 
+import com.google.common.base.Strings;
 import com.sforce.soap.enterprise.Connector;
 import com.sforce.soap.enterprise.EnterpriseConnection;
 import com.sforce.ws.ConnectionException;
@@ -16,6 +17,10 @@ public class SalesforceAuthenticator {
     public EnterpriseConnection login() throws ConnectionException {
         final String sfUsername = System.getenv("sf_username");
         final String sfPasswordAndKey = System.getenv("sf_password_and_key");
+
+        if (Strings.isNullOrEmpty(sfUsername) || Strings.isNullOrEmpty(sfPasswordAndKey)) {
+            throw new IllegalStateException("sf_username / sf_password_and_key environment variable(s) are not set");
+        }
 
         final ConnectorConfig config = new ConnectorConfig();
         config.setUsername(sfUsername);

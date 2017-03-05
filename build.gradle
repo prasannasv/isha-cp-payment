@@ -9,6 +9,7 @@
 
 // Apply the java plugin to add support for Java
 apply plugin: 'java'
+apply plugin: 'application'
 apply plugin: 'idea'
 
 // In this section you declare where to find the dependencies of your project
@@ -22,10 +23,11 @@ repositories {
 dependencies {
     // The production code uses the SLF4J logging API at compile time
     compile 'org.slf4j:slf4j-api:1.7.21'
+    runtime group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.21'
 
     compile group: 'com.google.guava', name: 'guava', version: '21.0'
 
-    // Salesforce Dependencies
+    // Database / CRM Dependencies
     compile group: 'com.force.api', name: 'force-wsc', version: '39.0.0'
     // Isha's Enterprise jar that contains definitions for our custom objects
     compile fileTree(dir: 'lib')
@@ -34,9 +36,22 @@ dependencies {
     compile 'com.paypal.sdk:rest-api-sdk:+'
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.3'
 
+    // Web App Dependencies
+    compile group: 'com.sparkjava', name: 'spark-core', version: '2.5.3'
+    compile group: 'com.google.template', name: 'soy', version: '2017-02-01'
+
     // Declare the dependency for your favourite test framework you want to use in your tests.
     // TestNG is also supported by the Gradle Test task. Just change the
     // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
     // 'test.useTestNG()' to your build script.
     testCompile 'junit:junit:4.12'
 }
+
+// Steps to make a spark app deploy in heroku is based on
+// https://www.learnhowtoprogram.com/java/web-applications-in-java/optional-deploying-spark-applications-to-heroku
+
+mainClassName = 'org.ishausa.registration.cp.RegistrationApp'
+applicationName = 'isha-cp-payment'
+
+defaultTasks = ['clean']
+task stage(dependsOn: ['clean', 'installDist'])

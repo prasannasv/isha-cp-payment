@@ -1,0 +1,172 @@
+{namespace org.ishausa.registration.cp.payment}
+
+/**
+ * PayPal payment for Children's Program.
+ *
+ * @param childFullName - full name of the child for which this payment is being processed
+ * @param parentsFullName - full name of the parent
+ * @param parentsEmail - email id of the parent
+ * @param amount - the donation amount for this program
+ */
+{template .index}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="PayPal Payment Processing for Children's Program">
+    <meta name="author" content="Prasanna Venkat">
+    <link rel="icon" href="../../favicon.ico">
+
+    <title>PayPal Payment for Children's Program</title>
+
+    <!-- Custom styles for this template -->
+    <link href="/css/registration_app.css" rel="stylesheet">
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Payment for Children's Program</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Home</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="starter-template">
+        <h2>Payment for Children's Program</h2>
+
+        <div class="panel panel-default">
+          <!-- Default panel contents -->
+          <div class="panel-heading">Payment for {$childFullName}</div>
+
+          <form action="/" method="POST">
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label">Parent's Name</label>
+              <div class="col-sm-10">
+                <p class="form-control-static">{$parentsFullName}</p>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label">Parent's Email</label>
+              <div class="col-sm-10">
+                <p class="form-control-static">{$parentsEmail}</p>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label">Price</label>
+              <div class="col-sm-10">
+                <p class="form-control-static">{$amount}</p>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="cardOwnerFirstName" class="col-sm-2 col-form-label">Card Owner's First Name</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="cardOwnerFirstName" placeholder="First Name">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="cardOwnerLastName" class="col-sm-2 col-form-label">Card Owner's Last Name</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="cardOwnerLastName" placeholder="Last Name">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="streetAddress" class="col-sm-2 col-form-label">Street Address</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="streetAddress" placeholder="111 First Lane">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="city" class="col-sm-2 col-form-label">City</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="city" placeholder="Seattle">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="state" class="col-sm-2 col-form-label">State</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="state" placeholder="WA">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label">Country</label>
+              <div class="col-sm-10">
+                <p class="form-control-static">US</p>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="cardNumber" class="col-sm-2 col-form-label">Card Number</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="cardNumber">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="expiryMonth" class="col-sm-2 col-form-label">Expiry Month</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="expiryMonth" placeholder="01">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="expiryYear" class="col-sm-2 col-form-label">Expiry Year</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="expiryYear" placeholder="2018">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="cvv2" class="col-sm-2 col-form-label">CVV2</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="cvv">
+              </div>
+            </div>
+
+            <input type="submit" value="Register">
+          </form>
+        </div>
+      </div>
+    </div><!-- /.container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script src="//cdn.tinymce.com/4/tinymce.min.js"></script>
+    <script>{literal}tinymce.init({ selector:'textarea' });{/literal}</script>
+  </body>
+</html>
+{/template}
+
+/**
+ * Non-existent Id
+ *
+ * @param id - id of the salesforce object for the child
+ */
+{template .non_existent_id}
+Unable to locate record for child with the id: {$id}. Please contact registration.support@ishausa.org with this payment link for support.
+{/template}

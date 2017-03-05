@@ -1,5 +1,7 @@
 package org.ishausa.registration.cp.payment;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.paypal.api.payments.CreditCard;
 import org.apache.http.HttpEntity;
@@ -37,6 +39,37 @@ public class PaymentProcessor {
     // Hardcoding currency to USD. Need to configure payment gateway to support other countries.
     private static final String CURRENCY_CODE = "USD";
 
+    private final String paypalApiUsername;
+    private final String paypalApiPassword;
+    private final String paypalApiSignature;
+
+    private final List<NameValuePair> paypalApiRequestStandardParams;
+
+    public PaymentProcessor() {
+        paypalApiUsername = System.getenv("paypal_api_user");
+        paypalApiPassword = System.getenv("paypal_api_password");
+        paypalApiSignature = System.getenv("paypal_api_signature");
+        if (Strings.isNullOrEmpty(paypalApiUsername) ||
+                Strings.isNullOrEmpty(paypalApiPassword) ||
+                Strings.isNullOrEmpty(paypalApiSignature)) {
+            throw new IllegalStateException("paypal_api_user / paypal_api_password / paypal_api_signature " +
+                    "environment variable(s) are not set");
+        }
+        paypalApiRequestStandardParams = ImmutableList.copyOf(paymentRequestNameValuePairs());
+    }
+
+    private List<NameValuePair> paymentRequestNameValuePairs() {
+        final List<NameValuePair> params = new ArrayList<>();
+
+        params.add(new BasicNameValuePair("USER", paypalApiUsername));
+        params.add(new BasicNameValuePair("PWD", paypalApiPassword));
+        params.add(new BasicNameValuePair("SIGNATURE", paypalApiSignature));
+        params.add(new BasicNameValuePair("METHOD", PAYPAL_DO_DIRECT_PAYMENT_METHOD));
+        params.add(new BasicNameValuePair("VERSION", PAYPAL_API_VERSION));
+
+        return params;
+    }
+
     public TransactionStatus chargeCreditCard(final PaymentInfo paymentInfo,
                                               final CreditCard card,
                                               final CardOwnerInfo ownerInfo) {
@@ -57,7 +90,7 @@ public class PaymentProcessor {
 
     private TransactionStatus transferMoney(final List<NameValuePair> params) throws UnsupportedEncodingException {
         final HttpPost post = new HttpPost(PAYPAL_API_ENDPOINT);
-        params.addAll(paymentRequestNameValuePairs());
+        params.addAll(paypalApiRequestStandardParams);
         post.setEntity(new UrlEncodedFormEntity(params));
         final CloseableHttpClient httpClient = HttpClients.createDefault();
         CloseableHttpResponse response = null;
@@ -82,18 +115,6 @@ public class PaymentProcessor {
                 }
             }
         }
-    }
-
-    private List<NameValuePair> paymentRequestNameValuePairs() {
-        final List<NameValuePair> params = new ArrayList<>();
-
-        params.add(new BasicNameValuePair("USER", System.getenv("paypal_api_user")));
-        params.add(new BasicNameValuePair("PWD", System.getenv("paypal_api_password")));
-        params.add(new BasicNameValuePair("SIGNATURE", System.getenv("paypal_api_signature")));
-        params.add(new BasicNameValuePair("METHOD", PAYPAL_DO_DIRECT_PAYMENT_METHOD));
-        params.add(new BasicNameValuePair("VERSION", PAYPAL_API_VERSION));
-
-        return params;
     }
 
     private List<NameValuePair> buildNameValuePairs(final PaymentInfo paymentInfo,
