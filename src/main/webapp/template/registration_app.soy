@@ -52,7 +52,7 @@
       <div class="starter-template">
         <h2>Payment for {$childFullName}</h2>
 
-        <form action="/" method="POST">
+        <form action="/" method="POST" data-toggle="validator" role="form">
           <input type="hidden" name="childId" value="{$childId}">
           <div class="form-group row">
             <label class="col-sm-4 col-form-label">Parent's Name</label>
@@ -73,40 +73,42 @@
               <p class="form-control-static">${$amount}</p>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="cardOwnerFirstName" class="col-sm-4 col-form-label">Card Owner's First Name</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="cardOwnerFirstName" placeholder="First Name">
+              <input type="text" class="form-control" name="cardOwnerFirstName" placeholder="First Name" required>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="cardOwnerLastName" class="col-sm-4 col-form-label">Card Owner's Last Name</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="cardOwnerLastName" placeholder="Last Name">
+              <input type="text" class="form-control" name="cardOwnerLastName" placeholder="Last Name" required>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="streetAddress" class="col-sm-4 col-form-label">Street Address</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="streetAddress" placeholder="111 First Lane">
+              <input type="text" class="form-control" name="streetAddress" placeholder="111 First Lane" required>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="city" class="col-sm-4 col-form-label">City</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="city" placeholder="Seattle">
+              <input type="text" class="form-control" name="city" placeholder="Seattle" required>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="state" class="col-sm-4 col-form-label">State</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="state" placeholder="WA">
+              <input type="text" class="form-control" name="state" placeholder="WA" pattern="^[A-Z]{lb}2{rb}$" data-error="Use two letter code in CAPITAL letters. For eg., WA." required>
+              <div class="help-block with-errors"></div>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="zipcode" class="col-sm-4 col-form-label">Zip</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="zipcode">
+              <input type="text" class="form-control" name="zipcode" pattern="^[0-9]{lb}5{rb}$" data-error="Must be 5 digits." required>
+              <div class="help-block with-errors"></div>
             </div>
           </div>
           <div class="form-group row">
@@ -115,10 +117,12 @@
               <p class="form-control-static">US</p>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="cardNumber" class="col-sm-4 col-form-label">Card Number</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="cardNumber">
+              <!-- http://www.dirigodev.com/blog/ecommerce/anatomy-of-a-credit-card-number/ -->
+              <input type="text" class="form-control" name="cardNumber" pattern="^[0-9]{lb}13,19{rb}$" data-error="Must be 13 to 19 numbers. No hyphens or spaces." required>
+              <div class="help-block with-errors"></div>
             </div>
           </div>
           <div class="form-group row">
@@ -153,10 +157,11 @@
               </select>
             </div>
           </div>
-          <div class="form-group row">
+          <div class="form-group row has-feedback">
             <label for="cvv2" class="col-sm-4 col-form-label">CVV2</label>
             <div class="col-sm-6">
-              <input type="text" class="form-control" name="cvv2">
+              <input type="text" class="form-control" name="cvv2" pattern="^[0-9]{lb}3,4{rb}$" data-error="Must be 3 or 4 digits." required>
+              <div class="help-block with-errors"></div>
             </div>
           </div>
 
@@ -180,8 +185,8 @@
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
-    <script src="//cdn.tinymce.com/4/tinymce.min.js"></script>
-    <script>{literal}tinymce.init({ selector:'textarea' });{/literal}</script>
+    <!-- http://1000hz.github.io/bootstrap-validator/ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/1000hz-bootstrap-validator/0.11.9/validator.min.js"></script>
   </body>
 </html>
 {/template}
