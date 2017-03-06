@@ -43,4 +43,12 @@ public class NameValuePairs {
         }
         return new AbstractMap.SimpleImmutableEntry<>(key, decodedValue);
     }
+
+    public static String nullSafeGetFirst(final Map<String, List<String>> params, final String fieldName) {
+        if (params == null || !params.containsKey(fieldName)) {
+            return "";
+        }
+        final List<String> values = params.get(fieldName);
+        return values.size() > 0 ? values.get(0) : "";
+    }
 }

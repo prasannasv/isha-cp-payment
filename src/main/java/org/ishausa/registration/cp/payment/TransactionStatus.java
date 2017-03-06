@@ -79,29 +79,21 @@ public class TransactionStatus {
     // TIMESTAMP=2017%2d03%2d05T07%3a31%3a49Z&CORRELATIONID=9dcd8f9ccc014&ACK=Failure&VERSION=56%2e0&BUILD=25237094&L_ERRORCODE0=10527&L_SHORTMESSAGE0=Invalid%20Data&L_LONGMESSAGE0=This%20transaction%20cannot%20be%20processed%2e%20Please%20enter%20a%20valid%20credit%20card%20number%20and%20type%2e&L_SEVERITYCODE0=Error&AMT=1%2e00&CURRENCYCODE=USD
     public static TransactionStatus fromResponse(final String response) {
         final Map<String, List<String>> responseParams = NameValuePairs.splitParams(response);
-        final String acknowledgement = nullSafeGetFirst(responseParams, FIELD_ACK);
+        final String acknowledgement = NameValuePairs.nullSafeGetFirst(responseParams, FIELD_ACK);
         if (acknowledgement.contains("Success")) {
             // TODO: Potential NPE
             return new TransactionStatus.Builder()
                     .withAck(acknowledgement)
-                    .withTxnId(nullSafeGetFirst(responseParams, FIELD_TRANSACTION_ID))
-                    .withCorrId(nullSafeGetFirst(responseParams, FIELD_CORRELATION_ID))
+                    .withTxnId(NameValuePairs.nullSafeGetFirst(responseParams, FIELD_TRANSACTION_ID))
+                    .withCorrId(NameValuePairs.nullSafeGetFirst(responseParams, FIELD_CORRELATION_ID))
                     .build();
         }
 
         return new TransactionStatus.Builder()
                 .withAck(acknowledgement)
-                .withErrorCode(nullSafeGetFirst(responseParams, FIELD_ERROR_CODE_0))
-                .withLongMessage(nullSafeGetFirst(responseParams, FIELD_LONG_MESSAGE_0))
+                .withErrorCode(NameValuePairs.nullSafeGetFirst(responseParams, FIELD_ERROR_CODE_0))
+                .withLongMessage(NameValuePairs.nullSafeGetFirst(responseParams, FIELD_LONG_MESSAGE_0))
                 .build();
-    }
-
-    private static String nullSafeGetFirst(final Map<String, List<String>> responseParams, final String fieldName) {
-        if (responseParams == null || !responseParams.containsKey(fieldName)) {
-            return "UNKNOWN";
-        }
-        final List<String> values = responseParams.get(fieldName);
-        return values.size() > 0 ? values.get(0) : "UNAVAILABLE";
     }
 
     public static TransactionStatus exception(final String prefix,
