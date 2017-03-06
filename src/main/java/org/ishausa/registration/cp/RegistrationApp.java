@@ -38,6 +38,25 @@ import static spark.Spark.post;
 import static spark.Spark.staticFiles;
 
 /**
+ * Web app that processes payment for Children's Program in iii.
+ *
+ * Integrates with Salesforce and PayPal. After a series of review of the
+ * participants application, as the last step, the parent or guardian is
+ * sent a payment link which is the starting point of this app.
+ * On receiving the /charge request, the app fetches information from Salesforce
+ * and serves a form for the requester to fill which asks for the credit card and
+ * card holder's details among other things.
+ *
+ * When the form is submitted, its data is POSTed to /. Here we validate the input
+ * and charge the card using PayPal NVP REST API. After that we log that transaction
+ * status into Salesforce for future reference.
+ * Both successful and failed transactions are recorded.
+ *
+ * Consistency Notes:
+ * If our app crashes midway between a paypal request, we will not know the status.
+ * Similarly, if the app crashes after paypal transaction but before we saved to Salesforce,
+ * again we will be in the void.
+ *
  * Created by Prasanna Venkat on 3/4/2017.
  */
 public class RegistrationApp {
@@ -58,12 +77,11 @@ public class RegistrationApp {
     private static final String OWNER_ZIPCODE_PARAM = "zipcode";
     private static final String CHILD_ID_PARAM = "childId";
 
-    private final SalesforceAuthenticator authenticator;
     private final EnterpriseConnection connection;
     private final PaymentProcessor paymentProcessor;
 
     private RegistrationApp() throws ConnectionException {
-        authenticator = new SalesforceAuthenticator();
+        final SalesforceAuthenticator authenticator = new SalesforceAuthenticator();
         connection = authenticator.login();
         paymentProcessor = new PaymentProcessor();
     }
@@ -158,7 +176,7 @@ public class RegistrationApp {
         // Use PaymentProcessor to do the payment
         final TransactionStatus status = paymentProcessor.chargeCreditCard(paymentInfo, card, cardOwnerInfo);
         // Log that info in Salesforce
-        createPaymentInfoChildrenProgram(connection, childId, paymentInfo, card, status);
+        createPaymentInfoChildrenProgram(connection, childId, paymentInfo, card, cardOwnerInfo, status);
         // Respond with payment success page with transactionId
         if (status.getAcknowledgment().startsWith("Success")) {
             return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.PAYMENT_SUCCESS,
@@ -201,27 +219,33 @@ public class RegistrationApp {
                                                      final String childContactId,
                                                      final PaymentInfo paymentInfo,
                                                      final CreditCard card,
+                                                     final CardOwnerInfo cardOwnerInfo,
                                                      final TransactionStatus status) {
         try {
-            final Payment_Information__c pI = new Payment_Information__c();
+            final Payment_Information__c paymentRecord = new Payment_Information__c();
+
+            paymentRecord.setFirst_Name__c(cardOwnerInfo.getFirstName());
+            paymentRecord.setLast_Name__c(cardOwnerInfo.getLastName());
+            paymentRecord.setEmail__c(cardOwnerInfo.getEmail());
+
             final Calendar sCal = Calendar.getInstance();
-            pI.setDate_of_Deposit_or_Date_CC_was_Charged__c(sCal);
-            pI.setPayment_Amount__c((double) paymentInfo.getAmount());
-            pI.setVendor_Confirmation_Number__c(status.getTransactionId());
-            pI.setChildrens_Program_Payment__c(childContactId);
+            paymentRecord.setDate_of_Deposit_or_Date_CC_was_Charged__c(sCal);
+            paymentRecord.setPayment_Amount__c((double) paymentInfo.getAmount());
+            paymentRecord.setVendor_Confirmation_Number__c(status.getTransactionId());
+            paymentRecord.setChildrens_Program_Payment__c(childContactId);
 
             //not mandatory
-            pI.setCredit_card_type__c(card.getType());
+            paymentRecord.setCredit_card_type__c(card.getType());
             //usually store the last four digit... not mandatory
-            pI.setCredit_card_Number__c(card.getNumber().substring(card.getNumber().length() - 4));
+            paymentRecord.setCredit_card_Number__c(card.getNumber().substring(card.getNumber().length() - 4));
 
             //set the payment type
-            pI.setMode_of_Payment__c("Paypal");
-            pI.setVolunteer_handled_the_payment__c("cp-payment heroku"); //max length 20 chars
+            paymentRecord.setMode_of_Payment__c("Paypal");
+            paymentRecord.setVolunteer_handled_the_payment__c("cp-payment heroku"); //max length 20 chars
 
             //Now we can create the payment object
             final Payment_Information__c[] payments = new Payment_Information__c[1];
-            payments[0] = pI;
+            payments[0] = paymentRecord;
 
             final SaveResult createResult = connection.create(payments)[0];
 
