@@ -2,8 +2,10 @@ package org.ishausa.registration.cp.payment;
 
 import com.paypal.api.payments.CreditCard;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Created by Prasanna Venkat on 3/4/2017.
@@ -17,20 +19,12 @@ public class PaymentProcessorTest {
     }
 
     @Test
-    @Ignore
-    public void validCard() {
-        final PaymentInfo amount = new PaymentInfo(1, "Children's Program Jul 2017", "Children's Program Jul 2017");
-        final CreditCard card = new CreditCard("4147008081913313", "Visa", 1, 2040);
-        final CardOwnerInfo ownerInfo = new CardOwnerInfo.Builder()
-                .withFirstName("Prasanna")
-                .withLastName("Venkat")
-                .withAddressLine1("123 2nd Ave N")
-                .withCity("Atlanta")
-                .withState("GA")
-                .withZip("30301")
-                .withEmail("random@gmail.com").build();
-
-        paymentProcessor.chargeCreditCard(amount, card, ownerInfo);
+    public void validateFormatting() {
+        final CreditCard card = new CreditCard("4147008081913313", "Visa", 3, 2020);
+        card.setCvv2("453");
+        final String value = String.format("%02d%d", card.getExpireMonth(), card.getExpireYear());
+        assertEquals("022020", value);
+        assertEquals("453", card.getCvv2String());
     }
 
     @Test
@@ -46,6 +40,8 @@ public class PaymentProcessorTest {
                 .withZip("30301")
                 .withEmail("random@gmail.com").build();
 
-        paymentProcessor.chargeCreditCard(amount, card, ownerInfo);
+        final TransactionStatus status = paymentProcessor.chargeCreditCard(amount, card, ownerInfo);
+        assertEquals("Failure", status.getAcknowledgment());
+        assertNotNull(status.getLongMessage());
     }
 }
