@@ -61,7 +61,7 @@ import static spark.Spark.staticFiles;
  */
 public class RegistrationApp {
     private static final Logger log = Logger.getLogger(RegistrationApp.class.getName());
-    private static final int CHILDRENS_PROGRAM_AMOUNT = 1;
+    private static final int CHILDRENS_PROGRAM_AMOUNT = 925;
     private static final String CHILDRENS_PROGRAM_DESC = "Children's Program Jul 2017";
 
     private static final String CARD_NUMBER_PARAM = "cardNumber";
