@@ -73,6 +73,7 @@ public class RegistrationApp {
     private static final String OWNER_STREET_ADDRESS_PARAM = "streetAddress";
     private static final String OWNER_CITY_PARAM = "city";
     private static final String OWNER_STATE_PARAM = "state";
+    private static final String OWNER_COUNTRY_PARAM = "country";
     private static final String OWNER_EMAIL_PARAM = "email";
     private static final String OWNER_ZIPCODE_PARAM = "zipcode";
     private static final String CHILD_ID_PARAM = "childId";
@@ -169,6 +170,7 @@ public class RegistrationApp {
                 .withAddressLine1(NameValuePairs.nullSafeGetFirst(params, OWNER_STREET_ADDRESS_PARAM))
                 .withCity(NameValuePairs.nullSafeGetFirst(params, OWNER_CITY_PARAM))
                 .withState(NameValuePairs.nullSafeGetFirst(params, OWNER_STATE_PARAM))
+                .withCountry(NameValuePairs.nullSafeGetFirst(params, OWNER_COUNTRY_PARAM))
                 .withEmail(NameValuePairs.nullSafeGetFirst(params, OWNER_EMAIL_PARAM))
                 .withZip(NameValuePairs.nullSafeGetFirst(params, OWNER_ZIPCODE_PARAM))
                 .build();
