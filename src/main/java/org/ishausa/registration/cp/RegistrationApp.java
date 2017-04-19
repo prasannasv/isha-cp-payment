@@ -8,9 +8,11 @@ import com.sforce.soap.enterprise.EnterpriseConnection;
 import com.sforce.soap.enterprise.Error;
 import com.sforce.soap.enterprise.QueryResult;
 import com.sforce.soap.enterprise.SaveResult;
+import com.sforce.soap.enterprise.sobject.Child_Program_Relation__c;
 import com.sforce.soap.enterprise.sobject.Child__c;
 import com.sforce.soap.enterprise.sobject.Contact;
 import com.sforce.soap.enterprise.sobject.Payment_Information__c;
+import com.sforce.soap.enterprise.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import org.ishausa.registration.cp.http.NameValuePairs;
 import org.ishausa.registration.cp.payment.CardOwnerInfo;
@@ -124,7 +126,7 @@ public class RegistrationApp {
                 final Contact parent = child.getParent_or_gaurdian__r();
                 soyData.put("parentsFullName", parent.getFirstName() + " " + parent.getLastName());
                 soyData.put("parentsEmail", parent.getEmail());
-                soyData.put("amount", CHILDRENS_PROGRAM_AMOUNT);
+                soyData.put("amount", getProgramCost(connection, childId));
 
                 return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.INDEX, soyData);
             }
@@ -152,7 +154,7 @@ public class RegistrationApp {
 
         // Create PaymentInfo, CreditCard (set cvv2), CardOwnerInfo
         final PaymentInfo paymentInfo =
-                new PaymentInfo(CHILDRENS_PROGRAM_AMOUNT, CHILDRENS_PROGRAM_DESC, CHILDRENS_PROGRAM_DESC);
+                new PaymentInfo(getProgramCost(connection, childId), CHILDRENS_PROGRAM_DESC, CHILDRENS_PROGRAM_DESC);
 
         final String cardNumber = NameValuePairs.nullSafeGetFirst(params, CARD_NUMBER_PARAM);
         final CardType cardType = CardType.detect(cardNumber);
@@ -215,6 +217,29 @@ public class RegistrationApp {
             log.log(Level.SEVERE, "Exception querying Child__c", e);
         }
         return null;
+    }
+
+    private int getProgramCost(final EnterpriseConnection connection, final String childId) {
+        try {
+            final QueryResult queryResult = connection.query(
+                    String.format("SELECT Program__r.Id, Program__r.Program_Cost__c " +
+                            "FROM Child_Program_Relation__c " +
+                            "WHERE Child_Contact__r.Id ='%s'", childId));
+
+            if (queryResult.getRecords().length > 0) {
+                for (final SObject relationship : queryResult.getRecords()) {
+                    final Child_Program_Relation__c childProgramRel = (Child_Program_Relation__c) relationship;
+                    final Double programCost = childProgramRel.getProgram__r().getProgram_Cost__c();
+                    log.info("Program cost: " + programCost);
+                    if (programCost != null && programCost.doubleValue() > 0) {
+                        return programCost.intValue();
+                    }
+                }
+            }
+        } catch (final ConnectionException e) {
+            log.log(Level.SEVERE, "Exception querying Child_Program_Relation__c", e);
+        }
+        return CHILDRENS_PROGRAM_AMOUNT;
     }
 
     private boolean createPaymentInfoChildrenProgram(final EnterpriseConnection connection,
