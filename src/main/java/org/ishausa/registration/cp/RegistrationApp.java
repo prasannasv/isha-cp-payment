@@ -123,7 +123,8 @@ public class RegistrationApp {
             final List<Payment_Information__c> paymentRecords = getPastPaymentRecords(connection, childId);
             for (final Payment_Information__c paymentInfo : paymentRecords) {
                 if (paymentInfo.getVendor_Confirmation_Number__c() != null &&
-                        !paymentInfo.getVendor_Confirmation_Number__c().trim().isEmpty()) {
+                        !paymentInfo.getVendor_Confirmation_Number__c().trim().isEmpty() &&
+                        paymentInfo.getDate_of_Deposit_or_Date_CC_was_Charged__c().get(Calendar.YEAR) == 2017) {
                     final Map<String, Object> soyData = new HashMap<>();
 
                     soyData.put("childFullName", paymentInfo.getChildrens_Program_Payment__r().getFull_Name__c());
