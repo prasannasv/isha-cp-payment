@@ -25,6 +25,9 @@ import org.ishausa.registration.cp.security.HttpsEnforcer;
 import spark.Request;
 import spark.Response;
 
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -116,8 +119,32 @@ public class RegistrationApp {
         final String childId = request.queryParams("id");
 
         if (!Strings.isNullOrEmpty(childId)) {
+            //Check if participant has already paid. If so, don't show this page.
+            final List<Payment_Information__c> paymentRecords = getPastPaymentRecords(connection, childId);
+            for (final Payment_Information__c paymentInfo : paymentRecords) {
+                if (paymentInfo.getVendor_Confirmation_Number__c() != null &&
+                        !paymentInfo.getVendor_Confirmation_Number__c().trim().isEmpty()) {
+                    final Map<String, Object> soyData = new HashMap<>();
+
+                    soyData.put("childFullName", paymentInfo.getChildrens_Program_Payment__r().getFull_Name__c());
+                    soyData.put("parentsFullName", paymentInfo.getFirst_Name__c() + " " + paymentInfo.getLast_Name__c());
+                    soyData.put("parentsEmail", paymentInfo.getEmail__c());
+                    soyData.put("amount", paymentInfo.getPayment_Amount__c());
+                    soyData.put("paymentDate", paymentInfo
+                            .getDate_of_Deposit_or_Date_CC_was_Charged__c()
+                            .getTime()
+                            .toInstant()
+                            .atOffset(ZoneOffset.UTC)
+                            .format(DateTimeFormatter.ISO_DATE));
+                    soyData.put("transactionId", paymentInfo.getVendor_Confirmation_Number__c());
+
+                    log.info("Found successful payment for the participant: " + childId);
+
+                    return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.PAYMENT_ALREADY_PROCESSED, soyData);
+                }
+            }
+
             final Child__c child = queryParticipant(connection, childId);
-            //TODO: Check if participant has already paid. If so, don't show this page.
             if (child != null) {
                 final Map<String, Object> soyData = new HashMap<>();
 
@@ -242,6 +269,32 @@ public class RegistrationApp {
         return CHILDRENS_PROGRAM_AMOUNT;
     }
 
+    private List<Payment_Information__c> getPastPaymentRecords(final EnterpriseConnection connection,
+                                                               final String childId) {
+        final List<Payment_Information__c> paymentRecords = new ArrayList<>();
+        try {
+            final QueryResult queryResult = connection.query(
+                    String.format("SELECT First_Name__c, Last_Name__c, Email__c, " +
+                            "Childrens_Program_Payment__r.Full_Name__c, " +
+                            "Vendor_Confirmation_Number__c, Payment_Amount__c, " +
+                            "Date_of_Deposit_or_Date_CC_was_Charged__c, Credit_card_Number__c, Credit_card_type__c, " +
+                            "Notes__c " +
+                            "FROM Payment_Information__c " +
+                            "WHERE Childrens_Program_Payment__r.Id ='%s'", childId));
+
+            if (queryResult.getRecords().length > 0) {
+                for (final SObject info : queryResult.getRecords()) {
+                    final Payment_Information__c paymentInfo = (Payment_Information__c) info;
+
+                    paymentRecords.add(paymentInfo);
+                }
+            }
+        } catch (final ConnectionException e) {
+            log.log(Level.SEVERE, "Exception querying Child_Program_Relation__c", e);
+        }
+        return paymentRecords;
+    }
+
     private boolean createPaymentInfoChildrenProgram(final EnterpriseConnection connection,
                                                      final String childContactId,
                                                      final PaymentInfo paymentInfo,
@@ -259,6 +312,9 @@ public class RegistrationApp {
             paymentRecord.setDate_of_Deposit_or_Date_CC_was_Charged__c(sCal);
             paymentRecord.setPayment_Amount__c((double) paymentInfo.getAmount());
             paymentRecord.setVendor_Confirmation_Number__c(status.getTransactionId());
+            if (!status.getAcknowledgment().startsWith("Success")) {
+                paymentRecord.setNotes__c(status.getAcknowledgment() + ", msg: " + status.getLongMessage());
+            }
             paymentRecord.setChildrens_Program_Payment__c(childContactId);
 
             //not mandatory
