@@ -136,7 +136,7 @@ public class RegistrationApp {
     private String handlePost(final Request request, final Response response) {
         final String content = request.body();
         final Map<String, List<String>> params = NameValuePairs.splitParams(content);
-        log.info("content: " + content + ", params: " + params);
+        // log.info("content: " + content + ", params: " + params);
         // Validate input
         final String childId = NameValuePairs.nullSafeGetFirst(params, CHILD_ID_PARAM);
         if (Strings.isNullOrEmpty(childId)) {
