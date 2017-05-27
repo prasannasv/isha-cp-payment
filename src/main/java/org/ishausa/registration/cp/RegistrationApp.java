@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -119,30 +120,10 @@ public class RegistrationApp {
         final String childId = request.queryParams("id");
 
         if (!Strings.isNullOrEmpty(childId)) {
-            //Check if participant has already paid. If so, don't show this page.
-            final List<Payment_Information__c> paymentRecords = getPastPaymentRecords(connection, childId);
-            for (final Payment_Information__c paymentInfo : paymentRecords) {
-                if (paymentInfo.getVendor_Confirmation_Number__c() != null &&
-                        !paymentInfo.getVendor_Confirmation_Number__c().trim().isEmpty() &&
-                        paymentInfo.getDate_of_Deposit_or_Date_CC_was_Charged__c().get(Calendar.YEAR) == 2017) {
-                    final Map<String, Object> soyData = new HashMap<>();
-
-                    soyData.put("childFullName", paymentInfo.getChildrens_Program_Payment__r().getFull_Name__c());
-                    soyData.put("parentsFullName", paymentInfo.getFirst_Name__c() + " " + paymentInfo.getLast_Name__c());
-                    soyData.put("parentsEmail", paymentInfo.getEmail__c());
-                    soyData.put("amount", paymentInfo.getPayment_Amount__c());
-                    soyData.put("paymentDate", paymentInfo
-                            .getDate_of_Deposit_or_Date_CC_was_Charged__c()
-                            .getTime()
-                            .toInstant()
-                            .atOffset(ZoneOffset.UTC)
-                            .format(DateTimeFormatter.ISO_DATE));
-                    soyData.put("transactionId", paymentInfo.getVendor_Confirmation_Number__c());
-
-                    log.info("Found successful payment for the participant: " + childId);
-
-                    return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.PAYMENT_ALREADY_PROCESSED, soyData);
-                }
+            // Check if participant has already paid. If so, don't show this page.
+            final Optional<Payment_Information__c> paymentInfoOptional = findPastSuccessfulPaymentRecord(childId);
+            if (paymentInfoOptional.isPresent()) {
+                return renderPaymentAlreadyProcessedPage(paymentInfoOptional.get(), childId);
             }
 
             final Child__c child = queryParticipant(connection, childId);
@@ -164,16 +145,21 @@ public class RegistrationApp {
                     ImmutableMap.of("id", Strings.nullToEmpty(childId)));
     }
 
-    private String handlePost(final Request request, final Response response) {
+    private synchronized String handlePost(final Request request, final Response response) {
         final String content = request.body();
         final Map<String, List<String>> params = NameValuePairs.splitParams(content);
-        // log.info("content: " + content + ", params: " + params);
         // Validate input
         final String childId = NameValuePairs.nullSafeGetFirst(params, CHILD_ID_PARAM);
         if (Strings.isNullOrEmpty(childId)) {
             return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.NON_EXISTENT_ID,
                     ImmutableMap.of("id", Strings.nullToEmpty(childId)));
         }
+        // Check if participant has already paid. If so, don't show this page.
+        final Optional<Payment_Information__c> paymentInfoOptional = findPastSuccessfulPaymentRecord(childId);
+        if (paymentInfoOptional.isPresent()) {
+            return renderPaymentAlreadyProcessedPage(paymentInfoOptional.get(), childId);
+        }
+
         final Child__c child = queryParticipant(connection, childId);
         if (child == null) {
             return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.NON_EXISTENT_ID,
@@ -219,6 +205,38 @@ public class RegistrationApp {
         return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.PAYMENT_FAILURE,
                 ImmutableMap.of("childFullName", child.getFull_Name__c(),
                         "longMessage", status.getLongMessage()));
+    }
+
+    private Optional<Payment_Information__c> findPastSuccessfulPaymentRecord(final String childId) {
+        final List<Payment_Information__c> paymentRecords = getPastPaymentRecords(connection, childId);
+        for (final Payment_Information__c paymentInfo : paymentRecords) {
+            if (paymentInfo.getVendor_Confirmation_Number__c() != null &&
+                    !paymentInfo.getVendor_Confirmation_Number__c().trim().isEmpty() &&
+                    paymentInfo.getDate_of_Deposit_or_Date_CC_was_Charged__c().get(Calendar.YEAR) == 2017) {
+                return Optional.of(paymentInfo);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private String renderPaymentAlreadyProcessedPage(final Payment_Information__c paymentInfo, final String childId) {
+        final Map<String, Object> soyData = new HashMap<>();
+
+        soyData.put("childFullName", paymentInfo.getChildrens_Program_Payment__r().getFull_Name__c());
+        soyData.put("parentsFullName", paymentInfo.getFirst_Name__c() + " " + paymentInfo.getLast_Name__c());
+        soyData.put("parentsEmail", paymentInfo.getEmail__c());
+        soyData.put("amount", paymentInfo.getPayment_Amount__c());
+        soyData.put("paymentDate", paymentInfo
+                .getDate_of_Deposit_or_Date_CC_was_Charged__c()
+                .getTime()
+                .toInstant()
+                .atOffset(ZoneOffset.UTC)
+                .format(DateTimeFormatter.ISO_DATE));
+        soyData.put("transactionId", paymentInfo.getVendor_Confirmation_Number__c());
+
+        log.info("Found successful payment for the participant: " + childId);
+
+        return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.PAYMENT_ALREADY_PROCESSED, soyData);
     }
 
     private Child__c queryParticipant(final EnterpriseConnection connection, final String childId) {
