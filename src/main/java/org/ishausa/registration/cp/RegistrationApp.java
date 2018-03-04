@@ -14,6 +14,7 @@ import com.sforce.soap.enterprise.sobject.Contact;
 import com.sforce.soap.enterprise.sobject.Payment_Information__c;
 import com.sforce.soap.enterprise.sobject.SObject;
 import com.sforce.ws.ConnectionException;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.ishausa.registration.cp.http.NameValuePairs;
 import org.ishausa.registration.cp.payment.CardOwnerInfo;
 import org.ishausa.registration.cp.payment.CardType;
@@ -68,7 +69,7 @@ import static spark.Spark.staticFiles;
 public class RegistrationApp {
     private static final Logger log = Logger.getLogger(RegistrationApp.class.getName());
     private static final int CHILDRENS_PROGRAM_AMOUNT = 925;
-    private static final String CHILDRENS_PROGRAM_DESC = "Children's Program Jul 2017";
+    private static final String CHILDRENS_PROGRAM_DESC = "Children's Program Jul 2018";
 
     private static final String CARD_NUMBER_PARAM = "cardNumber";
     private static final String CARD_EXPIRY_MONTH_PARAM = "expiryMonth";
@@ -166,9 +167,12 @@ public class RegistrationApp {
                     ImmutableMap.of("id", Strings.nullToEmpty(childId)));
         }
 
+        // Setting an invoice id prevents duplicate payments.
+        // We generate it as a combination of the child id and the current program.
+        final String invoiceId = DigestUtils.md5Hex(childId + CHILDRENS_PROGRAM_DESC);
         // Create PaymentInfo, CreditCard (set cvv2), CardOwnerInfo
-        final PaymentInfo paymentInfo =
-                new PaymentInfo(getProgramCost(connection, childId), CHILDRENS_PROGRAM_DESC, CHILDRENS_PROGRAM_DESC);
+        final PaymentInfo paymentInfo = new PaymentInfo(invoiceId, getProgramCost(connection, childId),
+                CHILDRENS_PROGRAM_DESC, CHILDRENS_PROGRAM_DESC);
 
         final String cardNumber = NameValuePairs.nullSafeGetFirst(params, CARD_NUMBER_PARAM);
         final CardType cardType = CardType.detect(cardNumber);

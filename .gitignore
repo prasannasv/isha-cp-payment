@@ -6,4 +6,5 @@
 *.class
 build
 .env
+out
 

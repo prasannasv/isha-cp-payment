@@ -4,6 +4,8 @@ import com.paypal.api.payments.CreditCard;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Random;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -29,7 +31,8 @@ public class PaymentProcessorTest {
 
     @Test
     public void invalidCard() {
-        final PaymentInfo amount = new PaymentInfo(1, "Children's Program Jul 2017", "Children's Program Jul 2017");
+        final String invoiceNum = String.valueOf(Math.abs(new Random().nextLong()));
+        final PaymentInfo amount = new PaymentInfo(invoiceNum, 1, "Children's Program Jul 2018", "Children's Program Jul 2018");
         final CreditCard card = new CreditCard("4147008081913313", "Visa", 1, 2010);
         final CardOwnerInfo ownerInfo = new CardOwnerInfo.Builder()
                 .withFirstName("Prasanna")

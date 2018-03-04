@@ -123,6 +123,7 @@ public class PaymentProcessor {
         final List<NameValuePair> params = new ArrayList<>();
 
         params.add(new BasicNameValuePair("PAYMENTACTION", "Sale"));
+        params.add(new BasicNameValuePair("INVNUM", paymentInfo.getInvoiceId()));
         params.add(new BasicNameValuePair("AMT", Integer.toString(paymentInfo.getAmount())));
         params.add(new BasicNameValuePair("CURRENCYCODE", CURRENCY_CODE));
         params.add(new BasicNameValuePair("CREDITCARDTYPE", card.getType()));
