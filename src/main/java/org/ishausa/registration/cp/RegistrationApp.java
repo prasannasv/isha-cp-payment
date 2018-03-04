@@ -169,7 +169,7 @@ public class RegistrationApp {
 
         // Setting an invoice id prevents duplicate payments.
         // We generate it as a combination of the child id and the current program.
-        final String invoiceId = DigestUtils.md5Hex(childId + CHILDRENS_PROGRAM_DESC);
+        final String invoiceId = DigestUtils.sha256Hex(childId + CHILDRENS_PROGRAM_DESC);
         // Create PaymentInfo, CreditCard (set cvv2), CardOwnerInfo
         final PaymentInfo paymentInfo = new PaymentInfo(invoiceId, getProgramCost(connection, childId),
                 CHILDRENS_PROGRAM_DESC, CHILDRENS_PROGRAM_DESC);
