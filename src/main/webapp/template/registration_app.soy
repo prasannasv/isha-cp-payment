@@ -398,12 +398,12 @@
             <label for="expiryYear" class="col-sm-4 col-form-label">Expiry Year</label>
             <div class="col-sm-6">
               <select class="form-control" name="expiryYear">
-                <option value="2017" selected="selected">2017</option>
-                <option value="2018">2018</option>
+                <option value="2018" selected="selected">2018</option>
                 <option value="2019">2019</option>
                 <option value="2020">2020</option>
                 <option value="2021">2021</option>
                 <option value="2022">2022</option>
+                <option value="2023">2023</option>
               </select>
             </div>
           </div>
@@ -469,6 +469,7 @@
  *
  * @param childFullName
  * @param transactionId
+ * @param message
  */
 {template .payment_success}
 <!DOCTYPE html>
@@ -481,7 +482,7 @@
   <section class="container">
     <div class="alert alert-success">
       <strong>Success!</strong> Payment towards {$childFullName}'s registration for the program was successfully processed.
-      Please note your transaction id for future reference: {$transactionId}.
+      Please note your transaction id for future reference: {$transactionId}. {$message}
     </div>
   </section>
 </body>
