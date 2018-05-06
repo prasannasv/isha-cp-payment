@@ -8,6 +8,7 @@
  * @param parentsFullName - full name of the parent
  * @param parentsEmail - email id of the parent
  * @param amount - the donation amount for this program
+ * @param programDesc - a description of what program this payment is for
  */
 {template .index}
 <!DOCTYPE html>
@@ -38,7 +39,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">Payment for Children's Program</a>
+          <a class="navbar-brand" href="#">Payment for {$programDesc}</a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
