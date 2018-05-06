@@ -21,6 +21,7 @@ import com.sforce.soap.enterprise.sobject.Payment_Information__c;
 import com.sforce.soap.enterprise.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.ishausa.registration.cp.http.NameValuePairs;
 import org.ishausa.registration.cp.payment.CardOwnerInfo;
 import org.ishausa.registration.cp.payment.CardType;
@@ -32,7 +33,9 @@ import org.ishausa.registration.cp.security.HttpsEnforcer;
 import spark.Request;
 import spark.Response;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -77,8 +80,8 @@ import static spark.Spark.staticFiles;
 public class RegistrationApp {
     private static final Logger log = Logger.getLogger(RegistrationApp.class.getName());
     private static final int CHILDRENS_PROGRAM_AMOUNT = 925;
-    private static final String CHILDRENS_PROGRAM_DESC = "Children's Program Jul 2018";
-
+    private static final String CHILDRENS_PROGRAM_DESC_PREFIX = "Children's Program ";
+    private static final SimpleDateFormat MONTH_YEAR_FORMAT = new SimpleDateFormat("MMM yyyy");
     private static final String CARD_NUMBER_PARAM = "cardNumber";
     private static final String CARD_EXPIRY_MONTH_PARAM = "expiryMonth";
     private static final String CARD_EXPIRY_YEAR_PARAM = "expiryYear";
@@ -144,10 +147,16 @@ public class RegistrationApp {
 
                 soyData.put("childId", childId);
                 soyData.put("childFullName", child.getFull_Name__c());
+
                 final Contact parent = child.getParent_or_gaurdian__r();
                 soyData.put("parentsFullName", parent.getFirstName() + " " + parent.getLastName());
                 soyData.put("parentsEmail", parent.getEmail());
-                soyData.put("amount", getProgramCost(connection, childId));
+
+                final Child_Program_Relation__c childProgramRelation = getChildProgramRelation(connection, childId);
+                soyData.put("amount", getProgramCost(childProgramRelation));
+
+                final String programDescription = createProgramDescription(childProgramRelation);
+                soyData.put("programDesc", programDescription);
 
                 return SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.INDEX, soyData);
             }
@@ -178,12 +187,14 @@ public class RegistrationApp {
                     ImmutableMap.of("id", Strings.nullToEmpty(childId)));
         }
 
+        final Child_Program_Relation__c childProgramRelation = getChildProgramRelation(connection, childId);
+        final String childrensProgramDesc = createProgramDescription(childProgramRelation);
         // Setting an invoice id prevents duplicate payments.
         // We generate it as a combination of the child id and the current program.
-        final String invoiceId = DigestUtils.sha256Hex(childId + CHILDRENS_PROGRAM_DESC);
+        final String invoiceId = DigestUtils.sha256Hex(childId + childrensProgramDesc);
         // Create PaymentInfo, CreditCard (set cvv2), CardOwnerInfo
-        final PaymentInfo paymentInfo = new PaymentInfo(invoiceId, getProgramCost(connection, childId),
-                CHILDRENS_PROGRAM_DESC, CHILDRENS_PROGRAM_DESC);
+        final PaymentInfo paymentInfo = new PaymentInfo(invoiceId, getProgramCost(childProgramRelation),
+                childrensProgramDesc, childrensProgramDesc);
 
         final String cardNumber = NameValuePairs.nullSafeGetFirst(params, CARD_NUMBER_PARAM);
         final CardType cardType = CardType.detect(cardNumber);
@@ -229,6 +240,11 @@ public class RegistrationApp {
                         "longMessage", status.getLongMessage()));
     }
 
+    private String createProgramDescription(final Child_Program_Relation__c childProgramRelation) {
+        return CHILDRENS_PROGRAM_DESC_PREFIX +
+                MONTH_YEAR_FORMAT.format(childProgramRelation.getProgram__r().getStart_Date__c().getTime());
+    }
+
     private void sendPaymentReceipt(final Child__c child, final PaymentInfo paymentInfo, final String transactionId)
             throws IOException {
         final Map<String, Object> soyData = new HashMap<>();
@@ -247,7 +263,7 @@ public class RegistrationApp {
         final String emailBody =
                 SoyRenderer.INSTANCE.render(SoyRenderer.RegistrationAppTemplate.PAYMENT_ALREADY_PROCESSED, soyData);
         sendEmail(child.getParent_or_gaurdian__r().getEmail(),
-                "Payment successfully processed towards " + CHILDRENS_PROGRAM_DESC + " for " + child.getFull_Name__c(),
+                "Payment successfully processed towards " + paymentInfo.getDescription() + " for " + child.getFull_Name__c(),
                 emailBody);
     }
 
@@ -335,28 +351,30 @@ public class RegistrationApp {
         return null;
     }
 
-    private int getProgramCost(final EnterpriseConnection connection, final String childId) {
+    private Child_Program_Relation__c getChildProgramRelation(final EnterpriseConnection connection,
+                                                              final String childId) {
         try {
             final QueryResult queryResult = connection.query(
-                    String.format("SELECT Program__r.Id, Program__r.Program_Cost__c " +
+                    String.format("SELECT Program__r.Id, Program__r.Start_Date__c, Program__r.Program_Cost__c " +
                             "FROM Child_Program_Relation__c " +
-                            "WHERE Child_Contact__r.Id ='%s'", childId));
+                            "WHERE Child_Contact__r.Id ='%s' " +
+                            "ORDER BY Program__r.Start_Date__c DESC", StringEscapeUtils.escapeEcmaScript(childId)));
 
             if (queryResult.getRecords().length > 0) {
-                for (final SObject relationship : queryResult.getRecords()) {
-                    final Child_Program_Relation__c childProgramRel = (Child_Program_Relation__c) relationship;
-                    final Double programCost = childProgramRel.getProgram__r().getProgram_Cost__c();
-                    log.info("Program cost: " + programCost);
-                    if ("a2s0G000009EqVI".equals(childId)) {
-                        return 1;
-                    }
-                    if (programCost != null && programCost.doubleValue() > 0) {
-                        return programCost.intValue();
-                    }
-                }
+                return (Child_Program_Relation__c) queryResult.getRecords()[0];
             }
+            return null;
         } catch (final ConnectionException e) {
             log.log(Level.SEVERE, "Exception querying Child_Program_Relation__c", e);
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private int getProgramCost(@Nullable final Child_Program_Relation__c childProgramRelation) {
+        final Double programCost = childProgramRelation.getProgram__r().getProgram_Cost__c();
+        log.info("Program cost: " + programCost);
+        if (programCost != null && programCost > 0) {
+            return programCost.intValue();
         }
         return CHILDRENS_PROGRAM_AMOUNT;
     }
