@@ -371,11 +371,14 @@ public class RegistrationApp {
     }
 
     private int getProgramCost(@Nullable final Child_Program_Relation__c childProgramRelation) {
-        final Double programCost = childProgramRelation.getProgram__r().getProgram_Cost__c();
-        log.info("Program cost: " + programCost);
-        if (programCost != null && programCost > 0) {
-            return programCost.intValue();
+        if (childProgramRelation != null) {
+            final Double programCost = childProgramRelation.getProgram__r().getProgram_Cost__c();
+            log.info("Program cost: " + programCost);
+            if (programCost != null && programCost > 0) {
+                return programCost.intValue();
+            }
         }
+
         return CHILDRENS_PROGRAM_AMOUNT;
     }
 
